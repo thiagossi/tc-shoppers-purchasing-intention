@@ -1,0 +1,24 @@
+[project]
+name = "tc-shoppers-purchasing-intention"
+version = "0.1.0"
+description = "Predição de propensão de compra em e-commerce"
+authors = [
+    {name = "thiagossi",email = "thiagossi@outlook.com"}
+]
+requires-python = ">=3.11"
+dependencies = [
+    "pandas (>=3.0.5,<4.0.0)"
+]
+
+
+[tool.poetry]
+packages = [{ include = "purchase_intent", from = "src" }]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.1.1,<10.0.0)"
+]
