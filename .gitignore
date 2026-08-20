@@ -33,13 +33,16 @@ htmlcov/
 mlruns/
 mlartifacts/
 
-# DVC (cache local; dvc.yaml e .dvc files continuam versionados)
+# DVC (cache local; dvc.yaml e *.dvc continuam versionados)
 /data/raw/*
 !/data/raw/.gitkeep
+!/data/raw/*.dvc
 /data/processed/*
 !/data/processed/.gitkeep
+!/data/processed/*.dvc
 /models/*
 !/models/.gitkeep
+!/models/*.dvc
 *.dvc.lock
 
 # IDE / OS
