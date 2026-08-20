@@ -1,0 +1,11 @@
+stages:
+  preprocess:
+    cmd: poetry run python -m purchase_intent.pipeline.preprocess
+    deps:
+      - data/raw/online_shoppers_intention.csv
+      - src/purchase_intent/data/loader.py
+      - src/purchase_intent/features/preprocessing.py
+      - src/purchase_intent/pipeline/preprocess.py
+    outs:
+      - data/processed/features.csv
+      - models/preprocessor.joblib

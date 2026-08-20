@@ -1,0 +1,30 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: poetry run python -m purchase_intent.pipeline.preprocess
+    deps:
+    - path: data/raw/online_shoppers_intention.csv
+      hash: md5
+      md5: cc6ec1db03b4f10f8de52c56ff48b085
+      size: 1072063
+    - path: src/purchase_intent/data/loader.py
+      hash: md5
+      md5: 775c3174f7a273a50222edd30232b996
+      size: 205
+    - path: src/purchase_intent/features/preprocessing.py
+      hash: md5
+      md5: acd5cdb33c14b0567a17bdcc065c9529
+      size: 927
+    - path: src/purchase_intent/pipeline/preprocess.py
+      hash: md5
+      md5: ea2cd32584458243c94297ffb08be54c
+      size: 1867
+    outs:
+    - path: data/processed/features.csv
+      hash: md5
+      md5: 621d72683a997b24118635a21dafccd8
+      size: 5724741
+    - path: models/preprocessor.joblib
+      hash: md5
+      md5: 93a346049da972175d71f4f04124a8a0
+      size: 4394
