@@ -33,13 +33,19 @@ htmlcov/
 mlruns/
 mlartifacts/
 
-# DVC (cache local; dvc.yaml e .dvc files continuam versionados)
+# DVC (cache local; dvc.yaml e *.dvc continuam versionados)
+# Exceção: o CSV bruto vai direto pro Git também (pequeno e público),
+# pra garantir que o projeto rode do zero sem depender de um remote DVC.
 /data/raw/*
 !/data/raw/.gitkeep
+!/data/raw/*.dvc
+!/data/raw/online_shoppers_intention.csv
 /data/processed/*
 !/data/processed/.gitkeep
+!/data/processed/*.dvc
 /models/*
 !/models/.gitkeep
+!/models/*.dvc
 *.dvc.lock
 
 # IDE / OS
