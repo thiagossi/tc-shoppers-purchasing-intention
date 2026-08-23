@@ -32,6 +32,7 @@ htmlcov/
 # MLflow
 mlruns/
 mlartifacts/
+mlflow.db
 
 # DVC (cache local; dvc.yaml e *.dvc continuam versionados)
 # Exceção: o CSV bruto vai direto pro Git também (pequeno e público),
