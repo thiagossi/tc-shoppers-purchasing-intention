@@ -15,9 +15,17 @@ Antes de começar, tenha instalado:
 
 - **[Python 3.11+](https://www.python.org/downloads/)** — verifique com `python --version`
 - **[Poetry](https://python-poetry.org/docs/#installation)** — gerenciador de dependências do projeto. Instale com:
-  ```bash
+
+  Windows (PowerShell):
+  ```powershell
   (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
   ```
+
+  Linux / macOS / Git Bash:
+  ```bash
+  curl -sSL https://install.python-poetry.org | python3 -
+  ```
+
   Verifique com `poetry --version`. Se o comando não for reconhecido, adicione a pasta do Poetry ao PATH do sistema (o instalador informa o caminho exato ao final).
 - **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** — necessário **apenas** se for testar a seção "Executando com Docker" abaixo. Precisa estar aberto e rodando (ícone estável na bandeja do sistema) antes de usar `docker build`/`docker run`.
 
@@ -35,9 +43,17 @@ poetry install
 ```
 
 **3. Configure as variáveis de ambiente:**
+
+Linux / macOS / Git Bash:
 ```bash
 cp .env.example .env
 ```
+
+Windows (PowerShell):
+```powershell
+Copy-Item .env.example .env
+```
+
 (Não precisa editar nada por enquanto — não há segredos reais no projeto ainda.)
 
 **4. Rode os testes automatizados** (confirma que tudo foi instalado corretamente):
