@@ -69,7 +69,7 @@ def _save_metrics(metrics: dict, path: Path) -> None:
 
 
 def _register_and_promote_model(run_id: str, metrics: dict) -> None:
-    """Registra o modelo no MLflow Model Registry e promove se superar o campeão atual."""
+    """Registra o modelo e promove a champion se ele igualar ou superar o atual."""
     client = MlflowClient()
     model_uri = f"runs:/{run_id}/model"
     new_version = mlflow.register_model(model_uri, MODEL_NAME)
@@ -86,7 +86,7 @@ def _register_and_promote_model(run_id: str, metrics: dict) -> None:
 
 
 def run_training() -> None:
-    """Orquestra o treino: carrega dados, treina, avalia, registra no MLflow e salva artefatos."""
+    """Treina o modelo e loga tudo no MLflow."""
     load_dotenv()
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
 

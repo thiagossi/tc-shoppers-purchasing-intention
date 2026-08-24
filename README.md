@@ -1,152 +1,130 @@
 # Purchase Intent — Online Shoppers Purchasing Intention
 
-Tech Challenge Fase 2 (FIAP) — sistema preditivo de propensão de compra
-a partir do comportamento de navegação de usuários em e-commerce.
+Prevê se um usuário de e-commerce vai fechar uma compra, a partir do
+comportamento de navegação dele — páginas visitadas, tempo em cada uma,
+se é visitante novo ou recorrente, entre outros sinais.
 
-Dataset: [Online Shoppers Purchasing Intention](https://archive.ics.uci.edu/dataset/468/online+shoppers+purchasing+intention+dataset) (UCI/Kaggle). Já incluído no repositório em `data/raw/`, não precisa baixar nada separado.
+Dataset: [Online Shoppers Purchasing Intention](https://archive.ics.uci.edu/dataset/468/online+shoppers+purchasing+intention+dataset)
+(UCI/Kaggle), já incluído em `data/raw/` — não precisa baixar nada à parte.
 
-## Status
+## Rodando do zero
 
-Etapas 1-4 concluídas: estrutura Clean Code, Poetry, DVC, Docker, treino do
-modelo com MLflow Tracking e Model Registry.
+Precisa de Python 3.11+ e [Poetry](https://python-poetry.org/docs/#installation)
+instalados. Docker é opcional, só entra se quiser testar a versão
+containerizada (precisa do Docker Desktop aberto).
 
-## Pré-requisitos
+Instalando o Poetry, se ainda não tiver:
 
-Antes de começar, tenha instalado:
+```powershell
+# Windows (PowerShell)
+(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+```
+```bash
+# Linux / macOS / Git Bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
 
-- **[Python 3.11+](https://www.python.org/downloads/)** — verifique com `python --version`
-- **[Poetry](https://python-poetry.org/docs/#installation)** — gerenciador de dependências do projeto. Instale com:
+Se `poetry --version` não for reconhecido depois, falta adicionar a pasta
+dele ao PATH (o instalador mostra o caminho certinho no final).
 
-  Windows (PowerShell):
-  ```powershell
-  (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
-  ```
+Daí:
 
-  Linux / macOS / Git Bash:
-  ```bash
-  curl -sSL https://install.python-poetry.org | python3 -
-  ```
-
-  Verifique com `poetry --version`. Se o comando não for reconhecido, adicione a pasta do Poetry ao PATH do sistema (o instalador informa o caminho exato ao final).
-- **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** — necessário **apenas** se for testar a seção "Executando com Docker" abaixo. Precisa estar aberto e rodando (ícone estável na bandeja do sistema) antes de usar `docker build`/`docker run`.
-
-## Passo a passo — rodando o projeto do zero
-
-**1. Clone o repositório e entre na pasta:**
 ```bash
 git clone https://github.com/thiagossi/tc-shoppers-purchasing-intention.git
 cd tc-shoppers-purchasing-intention
-```
-
-**2. Instale as dependências do projeto** (cria um ambiente virtual isolado em `.venv/`, sem afetar seu Python global):
-```bash
 poetry install
 ```
 
-**3. Configure as variáveis de ambiente:**
+Copia o `.env.example` pra `.env` (`cp .env.example .env` no Bash,
+`Copy-Item .env.example .env` no PowerShell — nada de segredo real pra
+configurar ainda, é só a variável do MLflow).
 
-Linux / macOS / Git Bash:
-```bash
-cp .env.example .env
-```
+Pra conferir que a instalação foi limpa:
 
-Windows (PowerShell):
-```powershell
-Copy-Item .env.example .env
-```
-
-(Não precisa editar nada por enquanto — não há segredos reais no projeto ainda.)
-
-**4. Rode os testes automatizados** (confirma que tudo foi instalado corretamente):
 ```bash
 poetry run pytest --cov=purchase_intent
 ```
 
-**5. Rode o pipeline completo (pré-processamento + treino):**
+E pra rodar o pipeline de verdade:
+
 ```bash
 poetry run dvc repro
 ```
-Isso executa dois estágios: `preprocess` (gera `data/processed/features.csv` e
-`models/preprocessor.joblib`) e `train` (treina um Random Forest, gera
-`models/model.joblib` e `metrics.json`, e registra o experimento no MLflow).
 
-## Estrutura do projeto
+Isso processa os dados brutos (`data/processed/features.csv`,
+`models/preprocessor.joblib`) e depois treina o modelo (Random Forest,
+`models/model.joblib`, `metrics.json`, registrado no MLflow).
+
+## Estrutura
 
 ```
-configs/                 # arquivos de configuração (ex: params.yaml)
+configs/                 # params.yaml — hiperparâmetros de treino
 data/
-  raw/                    # dados brutos (versionados via Git + DVC)
-  processed/              # dados tratados, gerados pelo pipeline (não versionado)
-models/                   # modelos/artefatos treinados, gerados pelo pipeline
+  raw/                    # dados brutos (Git + DVC)
+  processed/              # gerado pelo pipeline, não versionado
+models/                   # artefatos treinados, gerados pelo pipeline
 src/purchase_intent/
-  data/                   # ingestão de dados
-  features/               # engenharia de features
+  data/                   # ingestão
+  features/               # pré-processamento
   models/                 # treino/predição
-  evaluation/             # avaliação de modelos
-  pipeline/               # scripts que orquestram os estágios do pipeline
-  utils/                  # utilitários gerais
-tests/                    # testes automatizados
-dvc.yaml                  # pipeline reprodutível (DVC)
-Dockerfile                # imagem containerizada do pipeline
-metrics.json              # métricas da última execução de treino (versionado)
-mlflow.db                 # tracking store do MLflow (gerado, não versionado)
+  evaluation/             # avaliação
+  pipeline/               # orquestra os estágios (loader → preprocess → train)
+  utils/
+tests/
+dvc.yaml
+Dockerfile
+metrics.json              # métricas do último treino, versionado
+mlflow.db                 # tracking store do MLflow, gerado localmente
 ```
 
-## Sobre o pipeline de dados (DVC)
+## DVC
 
-O `dvc.yaml` declara dois estágios:
+`dvc.yaml` tem dois estágios — `preprocess` e `train` — e cada um só roda
+de novo se o dado, o código ou os parâmetros relevantes mudarem (hash do
+DVC, nada além disso).
 
-- **`preprocess`** — lê `data/raw/online_shoppers_intention.csv`, aplica escala
-  nas colunas numéricas e one-hot encoding nas categóricas, salva
-  `data/processed/features.csv` e `models/preprocessor.joblib`.
-- **`train`** — lê o dataset processado, treina um `RandomForestClassifier`
-  (hiperparâmetros em `configs/params.yaml`), avalia no conjunto de teste e
-  salva `models/model.joblib` e `metrics.json`.
+`preprocess` lê o CSV bruto, escala as colunas numéricas e faz one-hot nas
+categóricas. `train` pega esse resultado, treina um `RandomForestClassifier`
+(hiperparâmetros em `configs/params.yaml`), avalia contra um conjunto de
+teste separado e salva o modelo e as métricas.
 
-Rodar `dvc repro` novamente só reexecuta um estágio se seus dados, código ou
-parâmetros tiverem mudado (comportamento padrão do DVC, baseado em hash).
+Uma peculiaridade do dataset: não tem registro de Janeiro nem Abril. Se
+aparecer alguém navegando nesses meses no futuro, o `OneHotEncoder`
+(`handle_unknown="ignore"`) zera as colunas de mês em vez de quebrar —
+perde um pouco de sinal ali, mas o pipeline não cai.
 
-**Limitação conhecida:** o dataset não possui registros de Janeiro/Abril. Para
-entradas futuras nesses meses, o `OneHotEncoder` (configurado com
-`handle_unknown="ignore"`) zera as colunas de mês em vez de falhar — degradação
-graciosa, não um erro do pipeline.
+## Treino e MLflow
 
-## Treinamento, MLflow Tracking e Model Registry
+Random Forest com `class_weight="balanced"`, porque só ~15% das sessões
+terminam em compra — sem isso o modelo aprenderia a chutar "não compra"
+sempre e ainda pareceria bom olhando só a acurácia. Por isso a avaliação
+também usa precision, recall, f1 e roc_auc.
 
-O modelo é um `RandomForestClassifier` (scikit-learn) com `class_weight="balanced"`,
-já que o dataset é desbalanceado (~85% não compra / ~15% compra). Por isso a
-avaliação usa `accuracy`, `precision`, `recall`, `f1` e `roc_auc` — não só
-acurácia, que seria enganosa nesse cenário.
-
-Cada execução de treino é registrada como uma *run* do MLflow (parâmetros,
-métricas e o modelo em si). Para abrir a interface visual e comparar execuções:
+Cada treino vira uma run no MLflow. Pra abrir a interface:
 
 ```bash
 poetry run mlflow ui --backend-store-uri sqlite:///mlflow.db
 ```
 
-Depois acesse `http://localhost:5000` no navegador.
+`http://localhost:5000`.
 
-**Model Registry:** a cada treino, o modelo é registrado sob o nome
-`shoppers-purchase-intent`, ganhando uma versão nova automaticamente. Se a
-métrica `f1` dessa versão for igual ou melhor que a versão atualmente marcada
-com o alias `champion`, ela é promovida a `champion` — o critério objetivo de
-promoção pedido pelo desafio, sem aprovação manual.
+O modelo é registrado como `shoppers-purchase-intent` a cada execução, e só
+ganha o alias `champion` se o f1 dessa versão empatar ou superar o da
+versão campeã atual — a promoção segue essa regra fixa, sem depender de
+alguém validar manualmente.
 
-## Executando com Docker (opcional)
-
-Requer Docker Desktop instalado e aberto (veja Pré-requisitos). A partir da raiz
-do projeto:
+## Docker
 
 ```bash
-docker build -t purchase-intent:0.1 .
-docker run purchase-intent:0.1
+docker build -t purchase-intent:0.2 .
+docker run purchase-intent:0.2
 ```
 
-Isso constrói uma imagem que já contém o dataset e o código, e executa o
-estágio de pré-processamento de ponta a ponta dentro do container, sem
-depender de nada externo. Uma saída sem erros (código de saída `0`) confirma
-que o pipeline rodou com sucesso.
+Roda o pipeline inteiro (preprocess + train) dentro do container — o
+dataset já vem embutido na imagem, não precisa montar volume nem baixar
+nada. Terminar sem erro (`exit 0`) confirma que funcionou, incluindo o
+registro do modelo no MLflow.
 
-*Nota: a imagem Docker atual executa o estágio `preprocess`. O treino com
-MLflow é executado localmente via `poetry run dvc repro` (passo 5 acima).*
+Um detalhe: o `mlflow.db` que nasce dentro do container some junto com ele
+quando termina. O histórico "de verdade" é o local, gerado pelo próprio
+`dvc repro`.
