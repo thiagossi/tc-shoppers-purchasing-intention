@@ -139,14 +139,17 @@ Requer Docker Desktop instalado e aberto (veja Pré-requisitos). A partir da rai
 do projeto:
 
 ```bash
-docker build -t purchase-intent:0.1 .
-docker run purchase-intent:0.1
+docker build -t purchase-intent:0.2 .
+docker run purchase-intent:0.2
 ```
 
-Isso constrói uma imagem que já contém o dataset e o código, e executa o
-estágio de pré-processamento de ponta a ponta dentro do container, sem
-depender de nada externo. Uma saída sem erros (código de saída `0`) confirma
-que o pipeline rodou com sucesso.
+Isso constrói uma imagem que já contém o dataset e o código, e executa **os
+dois estágios** (pré-processamento e treino) de ponta a ponta dentro do
+container, sem depender de nada externo. Uma saída sem erros (código de
+saída `0`) confirma que o pipeline rodou com sucesso, incluindo o registro
+do modelo no MLflow Model Registry.
 
-*Nota: a imagem Docker atual executa o estágio `preprocess`. O treino com
-MLflow é executado localmente via `poetry run dvc repro` (passo 5 acima).*
+*Nota: o `mlflow.db` gerado dentro do container é efêmero — some quando o
+container termina, a menos que você monte um volume. O histórico "de
+verdade" de experimentos é o `mlflow.db` gerado localmente via `dvc repro`
+(passo 5 acima).*
