@@ -17,8 +17,8 @@ stages:
       size: 927
     - path: src/purchase_intent/pipeline/preprocess.py
       hash: md5
-      md5: ea2cd32584458243c94297ffb08be54c
-      size: 1867
+      md5: 6a19fa5785217713e0450a245f5bcbc5
+      size: 1919
     outs:
     - path: data/processed/features.csv
       hash: md5
@@ -28,3 +28,30 @@ stages:
       hash: md5
       md5: 93a346049da972175d71f4f04124a8a0
       size: 4394
+  train:
+    cmd: poetry run python -m purchase_intent.pipeline.train
+    deps:
+    - path: data/processed/features.csv
+      hash: md5
+      md5: 621d72683a997b24118635a21dafccd8
+      size: 5724741
+    - path: src/purchase_intent/pipeline/train.py
+      hash: md5
+      md5: a168c39341613fa0496da98991639976
+      size: 3170
+    params:
+      configs/params.yaml:
+        train:
+          test_size: 0.2
+          random_state: 42
+          n_estimators: 200
+          max_depth: 10
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: 5a36179902dca24f4ab74a87cd6eb498
+      size: 169
+    - path: models/model.joblib
+      hash: md5
+      md5: 9385ca5fe8b9d2e86d800e909d9f73dc
+      size: 8298281
