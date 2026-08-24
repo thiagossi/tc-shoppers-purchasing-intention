@@ -9,3 +9,16 @@ stages:
     outs:
       - data/processed/features.csv
       - models/preprocessor.joblib
+
+  train:
+    cmd: poetry run python -m purchase_intent.pipeline.train
+    deps:
+      - data/processed/features.csv
+      - src/purchase_intent/pipeline/train.py
+    params:
+      - configs/params.yaml:
+    outs:
+      - models/model.joblib
+    metrics:
+      - metrics.json:
+          cache: false

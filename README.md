@@ -7,7 +7,8 @@ Dataset: [Online Shoppers Purchasing Intention](https://archive.ics.uci.edu/data
 
 ## Status
 
-Etapa 3 concluída (Containerização e Versionamento). Próxima etapa: modelagem e MLflow.
+Etapas 1-4 concluídas: estrutura Clean Code, Poetry, DVC, Docker, treino do
+modelo com MLflow Tracking e Model Registry.
 
 ## Pré-requisitos
 
@@ -61,11 +62,13 @@ Copy-Item .env.example .env
 poetry run pytest --cov=purchase_intent
 ```
 
-**5. Rode o pipeline de dados:**
+**5. Rode o pipeline completo (pré-processamento + treino):**
 ```bash
 poetry run dvc repro
 ```
-Isso gera `data/processed/features.csv` (dados pré-processados) e `models/preprocessor.joblib` (transformador treinado).
+Isso executa dois estágios: `preprocess` (gera `data/processed/features.csv` e
+`models/preprocessor.joblib`) e `train` (treina um Random Forest, gera
+`models/model.joblib` e `metrics.json`, e registra o experimento no MLflow).
 
 ## Estrutura do projeto
 
@@ -85,20 +88,50 @@ src/purchase_intent/
 tests/                    # testes automatizados
 dvc.yaml                  # pipeline reprodutível (DVC)
 Dockerfile                # imagem containerizada do pipeline
+metrics.json              # métricas da última execução de treino (versionado)
+mlflow.db                 # tracking store do MLflow (gerado, não versionado)
 ```
 
 ## Sobre o pipeline de dados (DVC)
 
-O `dvc.yaml` declara o estágio `preprocess`, que lê `data/raw/online_shoppers_intention.csv`,
-aplica escala nas colunas numéricas e one-hot encoding nas categóricas, e salva os
-artefatos em `data/processed/` e `models/`. Rodar `dvc repro` novamente só reexecuta
-o estágio se o dado ou o código de pré-processamento tiverem mudado (comportamento
-padrão do DVC, baseado em hash).
+O `dvc.yaml` declara dois estágios:
+
+- **`preprocess`** — lê `data/raw/online_shoppers_intention.csv`, aplica escala
+  nas colunas numéricas e one-hot encoding nas categóricas, salva
+  `data/processed/features.csv` e `models/preprocessor.joblib`.
+- **`train`** — lê o dataset processado, treina um `RandomForestClassifier`
+  (hiperparâmetros em `configs/params.yaml`), avalia no conjunto de teste e
+  salva `models/model.joblib` e `metrics.json`.
+
+Rodar `dvc repro` novamente só reexecuta um estágio se seus dados, código ou
+parâmetros tiverem mudado (comportamento padrão do DVC, baseado em hash).
 
 **Limitação conhecida:** o dataset não possui registros de Janeiro/Abril. Para
 entradas futuras nesses meses, o `OneHotEncoder` (configurado com
 `handle_unknown="ignore"`) zera as colunas de mês em vez de falhar — degradação
 graciosa, não um erro do pipeline.
+
+## Treinamento, MLflow Tracking e Model Registry
+
+O modelo é um `RandomForestClassifier` (scikit-learn) com `class_weight="balanced"`,
+já que o dataset é desbalanceado (~85% não compra / ~15% compra). Por isso a
+avaliação usa `accuracy`, `precision`, `recall`, `f1` e `roc_auc` — não só
+acurácia, que seria enganosa nesse cenário.
+
+Cada execução de treino é registrada como uma *run* do MLflow (parâmetros,
+métricas e o modelo em si). Para abrir a interface visual e comparar execuções:
+
+```bash
+poetry run mlflow ui --backend-store-uri sqlite:///mlflow.db
+```
+
+Depois acesse `http://localhost:5000` no navegador.
+
+**Model Registry:** a cada treino, o modelo é registrado sob o nome
+`shoppers-purchase-intent`, ganhando uma versão nova automaticamente. Se a
+métrica `f1` dessa versão for igual ou melhor que a versão atualmente marcada
+com o alias `champion`, ela é promovida a `champion` — o critério objetivo de
+promoção pedido pelo desafio, sem aprovação manual.
 
 ## Executando com Docker (opcional)
 
@@ -114,3 +147,6 @@ Isso constrói uma imagem que já contém o dataset e o código, e executa o
 estágio de pré-processamento de ponta a ponta dentro do container, sem
 depender de nada externo. Uma saída sem erros (código de saída `0`) confirma
 que o pipeline rodou com sucesso.
+
+*Nota: a imagem Docker atual executa o estágio `preprocess`. O treino com
+MLflow é executado localmente via `poetry run dvc repro` (passo 5 acima).*
