@@ -37,7 +37,7 @@ def _save_preprocessor(preprocessor: ColumnTransformer, path: Path) -> None:
 
 
 def run_preprocessing() -> None:
-    """Orquestra a leitura dos dados brutos, o pré-processamento e a persistência dos artefatos."""
+    """Lê o CSV bruto e salva as features prontas pro treino."""
     df = load_raw_data(RAW_DATA_PATH)
 
     preprocessor = build_preprocessor()
