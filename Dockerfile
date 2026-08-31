@@ -26,4 +26,6 @@ ENV PYTHONPATH=/app/src
 RUN chown -R mluser:mlgroup /app
 USER mluser
 
+ENV GIT_PYTHON_REFRESH=quiet
+
 CMD ["sh", "-c", "python -m purchase_intent.pipeline.preprocess && python -m purchase_intent.pipeline.train"]
